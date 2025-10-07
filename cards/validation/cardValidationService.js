@@ -1,9 +1,21 @@
-import cardSchema from "./cardValidationSchema.js";
+import { cardSchema, updateCardSchema } from "./cardValidationSchema.js";
 
+/**
+ * מאמת אובייקט כרטיס ליצירה (Create) באמצעות סכמת הרישום המלאה.
+ *
+ * @param {object} card - אובייקט הכרטיס ליצירה.
+ * @returns {object} - תוצאת הולידציה של Joi (value ו-error).
+ */
 export const validateCard = (card) => {
   return cardSchema.validate(card);
 };
 
-//משימה
-//למנוע הכנסת כרטיס לא תקין למסד הנתונים
-//יש להדפיס בקונסול את הסיבה לשגיאה
+/**
+ * מאמת אובייקט כרטיס לעדכון (Update) באמצעות סכמת העדכון החלקית.
+ *
+ * @param {object} card - אובייקט הכרטיס לעדכון (נתונים חלקיים).
+ * @returns {object} - תוצאת הולידציה של Joi (value ו-error).
+ */
+export const validateUpdateCard = (card) => {
+  return updateCardSchema.validate(card);
+};

@@ -24,7 +24,7 @@ router.get("/", async (req, res) => {
 router.post("/", auth, async (req, res) => {
   const newCard = req.body;
   const user = req.user;
-  if (!user.isBusiness) {
+  if (!user.isBusiness && !user.isAdmin) {
     return res.status(403).send("Only Business user can create cards");
   }
   const cardResult = await createNewCard(newCard, user._id);

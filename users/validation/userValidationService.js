@@ -1,4 +1,4 @@
-import userSchema from "./userValidationSchema.js";
+import { userSchema, updateUserSchema } from "./userValidationSchema.js";
 
 /**
  * פונקציה המאמתת אובייקט משתמש (User) באמצעות סכמת Joi.
@@ -10,4 +10,16 @@ import userSchema from "./userValidationSchema.js";
 export const validateUser = (user) => {
   // Joi.validate מחזיר אובייקט עם שני מאפיינים: error ו-value
   return userSchema.validate(user);
+};
+
+/**
+ * פונקציה המאמתת אובייקט עדכון (User Data) באמצעות סכמת העדכון.
+ *
+ * @param {object} user - הנתונים לעדכון (חלקיים).
+ * @returns {object} - תוצאת הולידציה של Joi.
+ */
+export const validateUpdateUser = (user) => {
+  // <--- הפונקציה החדשה
+  // משתמש בסכמת העדכון (הכל אופציונלי ודורש min(1))
+  return updateUserSchema.validate(user);
 };

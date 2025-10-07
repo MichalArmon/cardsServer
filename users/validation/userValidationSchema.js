@@ -61,5 +61,51 @@ export const validateUser = (user) => {
   return userSchema.validate(user);
 };
 
+// --- 3. Update User Schema (עדכון - הכל אופציונלי) ---
+// כל השדות זהים ל-userSchema, אך מוגדרים כאופציונליים כדי לאפשר עדכון חלקי (PATCH/PUT).
+export const updateUserSchema = Joi.object({
+  name: Joi.object({
+    first: Joi.string().min(2).max(256), // ללא .required()
+    middle: Joi.string().max(256).allow(""),
+    last: Joi.string().min(2).max(256), // ללא .required()
+  }).optional(), // אובייקט השם כולו אופציונלי
+
+  phone: Joi.string()
+    .ruleset.regex(phoneRegex)
+    .rule({ message: 'user "phone" must be a valid phone number' })
+    .optional(),
+  email: Joi.string()
+    .ruleset.pattern(emailRegex)
+    .rule({ message: 'user "email" must be a valid email' })
+    .optional(),
+
+  // סיסמה: ניתן לעדכן, אך אופציונלי
+  password: Joi.string()
+    .ruleset.pattern(passwordRegex)
+    .rule({ message: "password must be strong" })
+    .optional()
+    .trim(),
+
+  image: Joi.object({
+    url: Joi.string()
+      .ruleset.uri()
+      .rule({ message: 'user.image "url" must be a valid url' })
+      .allow(""),
+    alt: Joi.string().min(2).max(256).allow(""),
+  }).optional(),
+
+  address: Joi.object({
+    state: Joi.string().allow(""),
+    country: Joi.string().min(2).max(256),
+    city: Joi.string().min(2).max(256),
+    street: Joi.string().min(2).max(256),
+    houseNumber: Joi.number(),
+    zip: Joi.number().allow(""),
+  }).optional(), // אובייקט הכתובת כולו אופציונלי
+
+  isAdmin: Joi.boolean().optional(),
+  isBusiness: Joi.boolean().optional(),
+}).min(1);
+
 // ייצוא ברירת המחדל נשאר על הסכמה
 export default userSchema;
