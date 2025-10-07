@@ -2,8 +2,20 @@ import _ from "lodash";
 import { generateToken } from "../../auth/providers/jwtProvider.js";
 import { comparePassword, generatePassword } from "../helpers/bcrypt.js";
 import { createUser, getUserByEmail } from "./usersDataService.js";
+import { validateUser } from "../validation/userValidationService.js";
 
 export const createNewUser = async (user) => {
+  const { error, value } = validateUser(user);
+  if (error) {
+    console.log(
+      "Joi Validation Error in User Service:",
+      error.details[0].message
+    );
+
+    // זורק שגיאה כדי שהקונטרולר יתפוס אותה ויחזיר 400 ללקוח
+    throw new Error(error.details[0].message);
+  }
+
   try {
     let hashPass = generatePassword(user.password);
     user.password = hashPass;
