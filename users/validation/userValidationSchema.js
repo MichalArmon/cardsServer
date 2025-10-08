@@ -105,6 +105,14 @@ export const updateUserSchema = Joi.object({
 
   isAdmin: Joi.boolean().optional(),
   isBusiness: Joi.boolean().optional(),
+  loginAttempts: {
+    type: Number,
+    required: true,
+    default: 0,
+  },
+  lockUntil: {
+    type: Date,
+  },
 }).min(1);
 
 // ייצוא ברירת המחדל נשאר על הסכמה

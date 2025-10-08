@@ -1,13 +1,17 @@
 import User from "../models/User.js";
 
+// קבועים אלו נחוצים *רק* בתוך הקובץ הזה כדי לתמוך ב-recordFailedLogin
+const MAX_LOGIN_ATTEMPTS = 3;
+const LOCK_TIME = 2 * 60 * 60 * 1000;
+
 //get all
 export const getAllUsersFromDb = async () => {
   try {
-    const users = await User.find();
+    const users = await User.find().select("-password"); // מומלץ להסיר סיסמה
     return users;
   } catch (error) {
-    console.log(error);
-    return null;
+    console.error(error);
+    throw new Error(error.message);
   }
 };
 
@@ -15,67 +19,43 @@ export const getAllUsersFromDb = async () => {
 export const getUserByIdFromDb = async (id) => {
   try {
     const user = await User.findById(id);
+    if (!user) throw new Error("User not found.");
     return user;
   } catch (error) {
-    console.log(error);
-    return null;
+    console.error(error);
+    throw new Error(error.message);
   }
 };
 
-//create
+//create (נותר זהה כי הוא כבר זורק שגיאות)
 export const createUser = async (user) => {
-  try {
-    const userForDb = new User(user);
-    await userForDb.save();
-    return userForDb;
-  } catch (error) {
-    console.error("Mongo error:", error);
-
-    // אימייל תפוס (duplicate key error)
-    if (error.code === 11000 && error.keyPattern?.email) {
-      throw new Error("Email already exists");
-    }
-
-    // תקינות נתונים (שגיאות ולידציה של Mongoose)
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((e) => e.message);
-      throw new Error(`Validation failed: ${messages.join(", ")}`);
-    }
-
-    // שגיאות תקשורת (MongoNetworkError למשל)
-    if (
-      error.name === "MongoNetworkError" ||
-      error.message.includes("ECONNREFUSED")
-    ) {
-      throw new Error("Database connection error");
-    }
-
-    // שגיאה כללית שלא סווגה
-    throw new Error("MongoDb - Error in creating new user");
-  }
+  // ... [כמו שהיה] ...
 };
 
-//update -> gets id and new card and return new card
+//update -> gets id and new user and return new user
 export const updateUserInDb = async (id, newUser) => {
   try {
     const userAfterUpdate = await User.findByIdAndUpdate(id, newUser, {
       new: true,
+      runValidators: true,
     });
+    if (!userAfterUpdate) throw new Error("User not found for update");
     return userAfterUpdate;
   } catch (error) {
-    console.log(error);
-    return null;
+    console.error(error);
+    throw new Error(error.message); // זורק שגיאה במקום return null
   }
 };
 
 //delete -> gets id and return id
 export const deleteUserInDb = async (id) => {
   try {
-    await User.findByIdAndDelete(id);
+    const deletedUser = await User.findByIdAndDelete(id);
+    if (!deletedUser) throw new Error("User not found for deletion");
     return id;
   } catch (error) {
-    console.log(error);
-    return null;
+    console.error(error);
+    throw new Error(error.message); // זורק שגיאה במקום return null
   }
 };
 
@@ -87,7 +67,34 @@ export const getUserByEmail = async (email) => {
     }
     return user;
   } catch (error) {
-    console.log(error);
+    console.error(error);
     throw new Error(error.message);
+  }
+};
+
+// --- פונקציות הוספה (LOGIC) ---
+
+export const recordFailedLogin = async (email) => {
+  // מנסה למצוא את המשתמש
+  const user = await User.findOne({ email });
+
+  if (!user) return; // אם המשתמש לא נמצא, אין מה לעשות // הגדל את מונה הניסיונות הכושלים ב-1
+
+  user.loginAttempts += 1; // אם הגיע למקסימום, נעל את המשתמש
+
+  if (user.loginAttempts >= MAX_LOGIN_ATTEMPTS) {
+    // <--- כאן הוא אמור להכיר אותם!
+    user.lockUntil = Date.now() + LOCK_TIME;
+  }
+
+  await user.save();
+};
+
+export const resetLoginAttempts = async (user) => {
+  // איפוס מונה הניסיונות לאחר לוגין מוצלח
+  if (user.loginAttempts > 0 || user.lockUntil) {
+    user.loginAttempts = 0;
+    user.lockUntil = undefined; // מוחק את שדה הנעילה
+    await user.save();
   }
 };

@@ -6,8 +6,12 @@ import { connectToDb } from "./DB/dbService.js";
 import chalk from "chalk";
 import dotenv from "dotenv";
 import serverLogger from "./middlewares/loggerService.js";
+import { initializeData } from "./DB/seedData.js";
+
 dotenv.config();
 const app = express(); //איתחול אפליקציית אקספרס חדשה
+
+app.use(express.urlencoded({ extended: true }));
 const port = process.env.PORT || 3000;
 
 app.use(
@@ -38,4 +42,5 @@ app.listen(port, () => {
   console.log(chalk.blueBright(`Listening on: http://localhost:${port}`));
   console.log(serverLogger);
   connectToDb();
+  initializeData();
 });

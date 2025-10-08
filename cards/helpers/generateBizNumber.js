@@ -1,6 +1,5 @@
 import _ from "lodash";
 import { getCardByBizNumber } from "../services/cardsDataService.js";
-getCardByBizNumber;
 
 export const generateBizNumber = async () => {
   let newBizNumber;

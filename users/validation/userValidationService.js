@@ -23,3 +23,5 @@ export const validateUpdateUser = (user) => {
   // משתמש בסכמת העדכון (הכל אופציונלי ודורש min(1))
   return updateUserSchema.validate(user);
 };
+
+// usersService.js (הוספת הפונקציה החדשה)

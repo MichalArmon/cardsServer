@@ -37,6 +37,7 @@ const cardSchema = new Schema({
     type: String,
     required: true,
   },
+  likes: [String],
 });
 
 const Card = model("card", cardSchema);

@@ -21,6 +21,8 @@ const userSchema = new Schema({
     type: Date,
     default: Date.now,
   },
+  loginAttempts: { type: Number, required: true, default: 0 },
+  lockUntil: Date,
 });
 
 const User = model("user", userSchema);

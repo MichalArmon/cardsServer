@@ -7,7 +7,7 @@ export const getAllCardsFromDb = async () => {
     return cards;
   } catch (error) {
     console.log(error);
-    return null;
+    return null; // עדיין מחזיר null כי זו פונקציית קריאה כללית
   }
 };
 
@@ -15,10 +15,13 @@ export const getAllCardsFromDb = async () => {
 export const getCardByIdFromDb = async (id) => {
   try {
     const card = await Card.findById(id);
+    if (!card) {
+      throw new Error("Card not found in database."); // <--- תיקון: זורק שגיאה אם לא נמצא
+    }
     return card;
   } catch (error) {
-    console.log(error);
-    return null;
+    console.error("DB Error getting card by ID:", error);
+    throw new Error(error.message);
   }
 };
 
@@ -30,7 +33,7 @@ export const createCard = async (card) => {
     return cardForDb;
   } catch (error) {
     console.log(error);
-    return null;
+    throw new Error(error.message); // מומלץ לזרוק שגיאה
   }
 };
 
@@ -40,21 +43,27 @@ export const updateCardInDb = async (id, newCard) => {
     const cardAfterUpdate = await Card.findByIdAndUpdate(id, newCard, {
       new: true,
     });
+    if (!cardAfterUpdate) {
+      throw new Error("Card not found for update."); // <--- תיקון: זורק שגיאה אם לא נמצא
+    }
     return cardAfterUpdate;
   } catch (error) {
-    console.log(error);
-    return null;
+    console.error("DB Error updating card:", error);
+    throw new Error(error.message);
   }
 };
 
 //delete -> gets id and return id
 export const deleteCardInDb = async (id) => {
   try {
-    await Card.findByIdAndDelete(id);
+    const deletedCard = await Card.findByIdAndDelete(id);
+    if (!deletedCard) {
+      throw new Error("Card not found for deletion.");
+    }
     return id;
   } catch (error) {
     console.log(error);
-    return null;
+    throw new Error(error.message);
   }
 };
 
@@ -65,6 +74,40 @@ export const getCardByBizNumber = async (bizNumber) => {
     return card;
   } catch (error) {
     console.log(error);
-    return null;
+    throw new Error(error.message);
+  }
+};
+
+// --- פונקציה חדשה: TOGGLE LIKE (DAL) ---
+export const toggleLikeInDb = async (cardId, userId) => {
+  try {
+    // 1. מוצאים את הכרטיס כדי לבדוק את סטטוס הלייק הנוכחי
+    const card = await Card.findById(cardId);
+    if (!card) {
+      throw new Error("Card not found for like operation.");
+    } // 2. בדיקה: האם המשתמש כבר ברשימה? // המערך 'likes' מכיל מחרוזות (ID משתמש) כפי שהגדרת במודל
+
+    const userLiked = card.likes.includes(userId);
+
+    let updateOperation;
+
+    if (userLiked) {
+      // אם יש לייק, מסירים אותו ($pull)
+      updateOperation = { $pull: { likes: userId } };
+    } else {
+      // אם אין, מוסיפים אותו ($addToSet כדי לוודא שאין כפילויות)
+      updateOperation = { $addToSet: { likes: userId } };
+    } // 3. ביצוע העדכון והחזרת הכרטיס המעודכן
+
+    const updatedCard = await Card.findByIdAndUpdate(
+      cardId,
+      updateOperation,
+      { new: true } // מחזיר את המסמך המעודכן
+    );
+
+    return updatedCard;
+  } catch (error) {
+    console.error("DB Toggle Like Error:", error);
+    throw new Error(error.message);
   }
 };

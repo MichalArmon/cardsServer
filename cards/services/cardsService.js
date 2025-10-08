@@ -1,7 +1,7 @@
 import { generateBizNumber } from "../helpers/generateBizNumber.js";
 import {
-  validateCard,
-  validateUpdateCard,
+  validateCard, // נשתמש בזה לעדכון מלא
+  validateUpdateCard, // נשמור את זה אם תרצה להשתמש ב-PATCH
 } from "../validation/cardValidationService.js";
 import {
   createCard,
@@ -9,6 +9,7 @@ import {
   getAllCardsFromDb,
   getCardByIdFromDb,
   updateCardInDb,
+  toggleLikeInDb,
 } from "./cardsDataService.js";
 
 //get all
@@ -34,40 +35,37 @@ export const createNewCard = async (card, userId) => {
       error.details[0].message
     );
     throw new Error(error.details[0].message);
-    return null;
   }
-  const newCard = await createCard(card);
+  const newCard = await createCard(value);
   return newCard;
 };
 
-//update
 // --- UPDATE CARD (עדכון כרטיס) ---
-/**
- * מעדכנת כרטיס לאחר בדיקת הרשאה וולידציה.
- * @param {string} cardId - ה-ID של הכרטיס לעדכון.
- * @param {object} newCardData - הנתונים החדשים לעדכון.
- * @param {object} requestingUser - המשתמש שמבקש לבצע את הפעולה (מהטוקן).
- */
 export const updateCard = async (cardId, newCardData, requestingUser) => {
-  // 1. קריאה ל-DAL כדי לשלוף את הכרטיס המקורי (נדרש לבדיקת הבעלות)
-  const card = await getCardByIdFromDb(cardId);
+  // 1. בדיקת בטיחות (האם המשתמש המבקש קיים?)
+  if (!requestingUser) {
+    throw new Error(
+      "Authentication Error: Missing user identity for this operation."
+    );
+  } // 2. קריאה לכרטיס המקורי
 
+  const card = await getCardByIdFromDb(cardId);
   if (!card) {
     throw new Error("Card not found.");
-  }
+  } // 3. בדיקת הרשאה: רק הבעלים או אדמין
 
   const cardOwnerId = card.user_id.toString();
-  const isOwner = cardOwnerId === requestingUser._id.toString();
+  const requestingUserId = requestingUser._id.toString();
 
-  // 2. בדיקת הרשאה: רק הבעלים או אדמין
+  const isOwner = cardOwnerId === requestingUserId;
+
   if (!isOwner && !requestingUser.isAdmin) {
     throw new Error(
       "Authorization Error: Only the card owner or an admin can update this card."
     );
-  }
+  } // 4. ולידציה של הנתונים הנכנסים // **התיקון כאן: שימוש בסכמה המלאה (validateCard) לעדכון מלא**
 
-  // 3. ולידציה של הנתונים הנכנסים באמצעות סכמת העדכון (החלקית)
-  const { error, value } = validateUpdateCard(newCardData);
+  const { error, value } = validateCard(newCardData);
 
   if (error) {
     console.log(
@@ -75,11 +73,9 @@ export const updateCard = async (cardId, newCardData, requestingUser) => {
       error.details[0].message
     );
     throw new Error(error.details[0].message);
-  }
+  } // 5. קריאה ל-DAL לביצוע העדכון
 
-  // 4. קריאה ל-DAL לביצוע העדכון
   try {
-    // שולחים ל-DAL את ה-ID ואת הנתונים המאושרים על ידי Joi
     const updatedCard = await updateCardInDb(cardId, value);
 
     if (!updatedCard) {
@@ -88,7 +84,7 @@ export const updateCard = async (cardId, newCardData, requestingUser) => {
 
     return updatedCard;
   } catch (error) {
-    // תופס שגיאות מה-DAL (כגון שגיאת Mongoose או שדה חובה)
+    console.error("Internal Server Error in updateCard:", error);
     throw new Error(error.message);
   }
 };
@@ -99,6 +95,67 @@ export const deleteCard = async (id) => {
   return idOfDeletedCard;
 };
 
-//toggleLike
+// --- TOGGLE LIKE (החלפת לייק) ---
+export const toggleLike = async (cardId, userId) => {
+  // 1. בדיקת בטיחות: ודא שהמשתמש קיים
+  if (!userId) {
+    throw new Error(
+      "Authentication Required: User must be logged in to like a card."
+    );
+  }
 
-//changeBizNumber
+  try {
+    // 2. קריאה לכרטיס הנוכחי כדי לוודא קיום
+    const card = await getCardByIdFromDb(cardId);
+
+    if (!card) {
+      throw new Error("Card not found.");
+    }
+    // 3. קריאה לפונקציית ה-DAL שתבצע את הלוגיקה
+    const updatedCard = await toggleLikeInDb(cardId, userId);
+
+    if (!updatedCard) {
+      throw new Error("Toggling like failed in DB layer.");
+    }
+
+    return updatedCard;
+  } catch (error) {
+    throw new Error(error.message);
+  }
+};
+
+// --- CHANGE BIZ NUMBER (שינוי מספר עסקי - לאדמין בלבד) ---
+export const changeBizNumber = async (cardId, newBizNumber, requestingUser) => {
+  // 1. בדיקת הרשאה: רק אדמין מורשה!
+  if (!requestingUser.isAdmin) {
+    throw new Error(
+      "Authorization Error: Only administrators can change the business number."
+    );
+  }
+
+  // 2. ולידציה בסיסית של המספר החדש (7 ספרות)
+  if (
+    typeof newBizNumber !== "number" ||
+    newBizNumber < 1000000 ||
+    newBizNumber > 9999999
+  ) {
+    throw new Error("Validation Error: Biz number must be a 7-digit number.");
+  }
+
+  // 3. קריאה ל-DAL לביצוע העדכון
+  try {
+    // שימוש ב-updateCardInDb לשינוי שדה יחיד
+    const updatedCard = await updateCardInDb(cardId, {
+      bizNumber: newBizNumber,
+    });
+
+    if (!updatedCard) {
+      throw new Error("Card not found or update failed.");
+    }
+
+    return updatedCard;
+  } catch (error) {
+    // תופס שגיאות כגון מספר שכבר קיים (unique key error)
+    throw new Error(error.message);
+  }
+};
