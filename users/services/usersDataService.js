@@ -27,9 +27,16 @@ export const getUserByIdFromDb = async (id) => {
   }
 };
 
-//create (נותר זהה כי הוא כבר זורק שגיאות)
+//create - יוצר ושומר את המשתמש במונגו
 export const createUser = async (user) => {
-  // ... [כמו שהיה] ...
+  try {
+    const newUser = new User(user); // בונה את המשתמש לפי הסכימה
+    const savedUser = await newUser.save(); // שומר בדאטה-בייס!
+    return savedUser; // מחזיר את המשתמש שנוצר ל-Controller
+  } catch (error) {
+    console.error("Mongoose Save Error:", error.message);
+    throw new Error(error.message); // מעיף את השגיאה למעלה כדי שנקבל 400
+  }
 };
 
 //update -> gets id and new user and return new user
