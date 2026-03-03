@@ -1,5 +1,6 @@
 # 🚀 Cards Server - Node.js API (Full Stack Project)
 
+adahdiuagdiadghaidhaa
 This is a robust backend application built with Express, Mongoose, and MongoDB, implementing secure User and Business Card management. The architecture emphasizes **security, clear separation of concerns, and defined authorization rules.**
 
 ## 🏗️ Project Architecture
@@ -36,13 +37,11 @@ The application strictly follows a Layered Architecture (similar to MVC) for mai
     ```
 
 3.  **Configure Environment:**
-
     - Create a file named **`.env`** in the root directory.
     - Set your MongoDB connection string (`DB_URI`) and your JWT secret key (`JWT_SECRET`).
 
 4.  **Initial Data Seeding (Crucial for Testing):**
     The server is configured to automatically run `initializeData()` upon startup after connecting to the DB. This process ensures the following test accounts and cards are created:
-
     - **Admin User (with full privileges)**
     - **Business User (for card creation and ownership tests)**
     - **Regular User (for denial-of-access tests)**
