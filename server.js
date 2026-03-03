@@ -21,7 +21,7 @@ app.use(
       "http://localhost:5173",
       "https://cards-front.netlify.app",
     ],
-  })
+  }),
 );
 
 app.use(express.json());
@@ -42,5 +42,5 @@ app.listen(port, () => {
   console.log(chalk.blueBright(`Listening on: http://localhost:${port}`));
   console.log(serverLogger);
   connectToDb();
-  initializeData();
+  // initializeData();
 });
