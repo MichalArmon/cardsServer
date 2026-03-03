@@ -1,6 +1,5 @@
 # 🚀 Cards Server - Node.js API (Full Stack Project)
 
-adahdiuagdiadghaidhaa
 This is a robust backend application built with Express, Mongoose, and MongoDB, implementing secure User and Business Card management. The architecture emphasizes **security, clear separation of concerns, and defined authorization rules.**
 
 ## 🏗️ Project Architecture
