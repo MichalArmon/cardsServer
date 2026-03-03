@@ -11,20 +11,7 @@ export const getAllCardsFromDb = async () => {
   }
 };
 
-//get one by id
-export const getCardByIdFromDb = async (id) => {
-  try {
-    const card = await Card.findById(id);
-    if (!card) {
-      throw new Error("Card not found in database."); // <--- תיקון: זורק שגיאה אם לא נמצא
-    }
-    return card;
-  } catch (error) {
-    console.error("DB Error getting card by ID:", error);
-    throw new Error(error.message);
-  }
-};
-
+getCardByIdFromDb;
 //create
 export const createCard = async (card) => {
   try {
@@ -102,7 +89,7 @@ export const toggleLikeInDb = async (cardId, userId) => {
     const updatedCard = await Card.findByIdAndUpdate(
       cardId,
       updateOperation,
-      { new: true } // מחזיר את המסמך המעודכן
+      { new: true }, // מחזיר את המסמך המעודכן
     );
 
     return updatedCard;
